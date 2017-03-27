@@ -282,6 +282,10 @@
         }
 
         window.onhashchange = function(){
+            if(window.location.hash == '#unfinished'
+               || window.location.hash == '#all'
+               || window.location.hash == '#finished'
+              )return;
             window.location.reload();
         }
 
