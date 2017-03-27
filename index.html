@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/bootstrap.css">
+
+    <script src="./js/angular.js"></script>
+    <script src="./js/angular-animate.js"></script>
+    <script src="./js/ui-bootstrap.js"></script>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/vue.js"></script>    
+</head>
+<body>
+  
+  <div class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header" style="width: 100%">
+        <a class="navbar-brand" href="#">
+          学院系统
+        </a>
+        <ul class="nav navbar-nav" id="tabbox">
+          <li data-hash="gl"><a href="javascript:;">学员管理</a></li>
+          <li class="active" data-hash=jh><a href="javascript:;">个人任务计划表</a></li>
+        </ul>     
+        <form class="navbar-form navbar-right" role="search">
+          <div class="form-group">
+            <input type="text" class="form-control" placeholder="学院">
+          </div>
+          <button type="submit" class="btn btn-default">提交</button>
+        </form>  
+      </div>   
+    </div>  
+  </div>
+
+  <br>
+
+  <div ng-controller="mainController" class="box" data-hash="gl">
+    <nav class="navbar navbar-default" role="navigation">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">{{title}}</a>
+        </div>
+        <div class="collapse navbar-collapse" >
+            <ul class="nav navbar-nav" ng-click='addstudents()'>
+                <li>
+                    <a href="javascript:;">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="false"></span> 
+                        添加学员
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+
+        <h3>学员列表</h3>
+
+        <table class="table table-striped">
+
+            <thead>
+                <tr>
+                    <th>编号</th>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>年龄</th>
+                    <th>操作</th>
+                    <th>查看</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr ng-repeat="v in getCurrentStudents">
+                    <th>{{$index+1}}</th>
+                    <th>{{v.username}}</th>
+                    <th>{{v.usergender}}</th>
+                    <th>{{v.userage}}</th>
+                    <th width="10%">
+                      <button class="btn btn-danger" ng-click="remove($index)">
+                            <span class="glyphicon glyphicon-trash"></span>
+                            删除
+                      </button>
+                    </th>
+                    <th width="10%">
+                      <button class="btn btn-danger" ng-click="cWatch($index)">
+                            <span class="glyphicon glyphicon-screenshot"></span>
+                            查看
+                      </button>
+                    </th>                    
+                </tr>
+            </tbody>
+
+        </table>
+
+        <ul class="pagination-sm" uib-pagination total-items="totalItems" ng-model="page" items-per-page="itemsPerPage" max-size="maxSize" ng-change="changePage()" ></ul>
+
+    </div>
+       
+    <script type="text/ng-template" id="students.html">
+         <div class="modal-header">
+            <h3 class="modal-title" id="modal-title-add-student">添加学员</h3>
+        </div>
+        <div class="modal-body" id="modal-body-add-student">
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label for="name" class="col-sm-2 control-label">用户名</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="name" ng-model="username" placeholder="请填写用户名">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="gender" class="col-sm-2 control-label">性别</label>
+                    <div class="btn-group col-sm-10">
+                        <label class="btn btn-success" ng-model="gender" uib-btn-radio="'男'">男</label>
+                        <label ng-model="gender" class="btn btn-success" uib-btn-radio="'女'">女</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="age" class="col-sm-2 control-label">年龄</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="age" ng-model="userage"  placeholder="请填写年龄">
+                    </div>
+                </div>
+            </form>            
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="ok()"><span class="glyphicon glyphicon-ok"></span> OK</button>
+            <button class="btn btn-default" type="button" ng-click="close()"> <span class="glyphicon glyphicon-remove"></span>Cancel</button>
+        </div>       
+    </script>
+    <script>
+        var App = angular.module('app',['ui.bootstrap']);
+        App.controller('mainController',function($scope,$uibModal){
+              $scope.title = '学员管理'
+              $scope.students = [
+                {username:'张三', usergender:'男', userage: 30},
+                {username:'丽丝', usergender:'女', userage: 18},
+                {username:'王武', usergender:'男', userage: 24},
+                {username:'赵六', usergender:'男', userage: 24},
+                {username:'老王', usergender:'男', userage: 24},
+                {username:'李四', usergender:'男', userage: 24}
+              ];
+
+              $scope.$watch('students',function(newVal,oldVal){                              
+                    $scope.students = newVal;
+                    $scope.totalItems = $scope.students.length;
+                    getStudents()
+              },true)
+
+              // 分页
+              $scope.page = 1;
+              $scope.maxSize = 8;
+              $scope.totalItems = $scope.students.length;
+              $scope.itemsPerPage = 3;
+
+              //获取当前数据
+              $scope.getCurrentStudents = [];
+              getStudents()
+              function getStudents(){
+                $scope.getCurrentStudents = $scope.students.slice($scope.page * $scope.itemsPerPage-$scope.itemsPerPage,$scope.page * $scope.itemsPerPage)
+              }
+              
+              $scope.changePage = function(){
+                    getStudents()
+              }
+              
+              //删除数据
+              $scope.remove = function(index){
+                $scope.students.splice(index,1)
+              }
+
+              //删除数据
+              $scope.cWatch = function(index){
+                window.location.hash = 'jh'
+              }              
+
+              //学员添加弹框
+              $scope.addstudents = function(){
+                 //调用对话框组件
+                 $uibModal.open({
+                    templateUrl:'students.html',
+                    controller:'addStudentModal'
+                 }).result.then(function(rs){
+                       if(rs.message == 'ok'){
+                            $scope.students.push(rs.data)
+                            console.log($scope.students)
+                       }
+                 },function(){});
+              }
+        })
+        App.controller('addStudentModal',function($scope,$uibModalInstance){
+              $scope.username = 'chenzihao';
+              $scope.userage = '27';
+              $scope.gender = '女';
+
+              $scope.ok = function(){
+                $uibModalInstance.close({
+                    message : 'ok',
+                    data : {username:$scope.username,userage:$scope.userage,usergender:$scope.gender}
+                })
+              }
+              $scope.close = function(){
+                $uibModalInstance.close({
+                    message : 'cancel'
+                })
+              }
+        })
+        angular.bootstrap(document,['app']);
+    </script>
+  </div>
+  <div class="box" data-hash="jh">
+    <div class="page-top">
+        <div class="page-content">
+            <h2>任务计划列表</h2>
+        </div>
+    </div>
+    <div class="main">
+        <h3 class="big-title">添加任务：</h3>
+        <input 
+            placeholder="例如：看书；    提示：+回车即可添加任务" 
+            class="task-input" 
+            type="text"
+            v-model="todo"
+            v-on:keyup.13="addTodo"
+        />
+        <ul class="task-count" v-show="list.length">
+            <li>{{noCheckeLength}}个任务未完成</li>
+            <li class="action">
+                <a  href="#all" :class="{active:visibility === 'all'}">所有任务</a>
+                <a href="#unfinished" :class="{active:visibility === 'unfinished'}">未完成的任务</a>
+                <a href="#finished" :class="{active:visibility === 'finished'}">完成的任务</a>
+            </li>
+        </ul>
+        <h3 class="big-title">任务列表：</h3>
+        <div class="tasks">
+
+            <span class="no-task-tip" v-show="!list.length">还没有添加任何任务</span>
+            <ul class="todo-list">
+                <li class="todo" :class="{completed: item.isChecked,editing: item === edtorTodos}" v-for="item in filteredList" >
+                    <div class="view">
+                        <input class="toggle" type="checkbox" v-model="item.isChecked" />
+                        <label @dblclick="edtorTodo(item)">{{ item.title }}</label>
+                        <button class="destroy" @click="deleteTodo(item)"></button>
+                    </div>
+                    <input 
+                        v-foucs="edtorTodos === item" 
+                        class="edit" 
+                        type="text" 
+                        v-model = "item.title"
+                        @blur="edtorTodoed(item)"
+                        @keyup.13="edtorTodoed(item)"
+                        @keyup.esc="cancelTodo(item)"
+                    />
+                 </li>
+            </ul>
+        </div>
+     </div>
+   </div>
+   <script src="./js/app.js"></script>
+   <script type="text/javascript">
+      window.onload = function(){
+        var abox = document.querySelectorAll('.box');
+        var otabbox =  document.querySelector('#tabbox');
+        var aLi = otabbox.querySelectorAll('li');
+
+        for (var i = aLi.length - 1; i >= 0; i--) {
+          aLi[i].onclick = function(){
+            for(var j=0; j<aLi.length; j++){
+               aLi[j].className = '';
+            }
+            this.className = 'active';
+            var hash = this.dataset.hash;
+            window.location.hash = hash;
+
+            for (var i = abox.length - 1; i >= 0; i--) {
+              abox[i].style.display = 'none';
+              if(hash == abox[i].dataset.hash){
+                 abox[i].style.display = 'block';
+              }
+            }
+          }
+        }
+
+        window.onhashchange = function(){
+            window.location.reload();
+        }
+
+        var firsthash = window.location.hash.substring(1) || 'gl'
+
+        for (var i = abox.length - 1; i >= 0; i--) {
+          abox[i].style.display = 'none';
+          aLi[i].className = '';
+
+          if(firsthash == abox[i].dataset.hash){
+             abox[i].style.display = 'block';
+          }
+          if(firsthash == aLi[i].dataset.hash){
+             aLi[i].className = 'active';
+          }
+        }
+      }
+   </script>
+</body>
+</html>
